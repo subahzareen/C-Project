@@ -1,0 +1,1451 @@
+#include<stdio.h>
+
+#include<string.h>
+
+#include<stdlib.h>
+
+#define MAXC 100
+
+#define MAXB 100
+
+#define BUFFER_SIZE 500
+
+/*==========================================================================================*/
+
+/*==========================================================================================*/
+
+/*==========================================================================================*/
+
+/*STORING BAKERY ITEMS PART*/
+
+//structure to store bakery items<<<<<<<<<<<<<<<<
+
+typedef struct
+
+{
+
+    char item_name[70];
+
+    long int item_number;
+
+    double item_price;
+
+    char manufacturing[30];
+
+    char expiring[30];
+
+
+
+} BAKERY_ITEM;
+
+
+
+BAKERY_ITEM bak[MAXB];
+
+int bake_num=0;
+
+void input_and_store_bakery_items()
+
+{
+
+    FILE *bstore = fopen("BAKERY COLLECTION.txt", "a+");
+
+    if (bstore == NULL)
+
+    {
+
+        printf("<===============ERROR STORING BAKERY ITEMS===============>\n");
+
+        exit(1);
+
+    }
+
+
+
+    while (bake_num < MAXB)
+
+    {
+
+        printf("Enter the name of the bakery item (or type 'exit' to finish): ");
+
+        fgets(bak[bake_num].item_name, sizeof(bak[bake_num].item_name), stdin);
+
+        bak[bake_num].item_name[strcspn(bak[bake_num].item_name, "\n")] = '\0';
+
+
+
+        if (strcmp(bak[bake_num].item_name, "exit") == 0)
+
+        {
+
+            break; // User wants to exit
+
+        }
+
+
+
+        printf("Enter the price of the item: ");
+
+        scanf(" %lf", &bak[bake_num].item_price);
+
+        fflush(stdin);
+
+
+
+        printf("Enter the number of the items: ");
+
+        scanf(" %ld", &bak[bake_num].item_number);
+
+        fflush(stdin);
+
+
+
+        printf("Enter the manufacturing date (DD-MM-YYYY): ");
+
+        fgets(bak[bake_num].manufacturing, sizeof(bak[bake_num].manufacturing), stdin);
+
+        bak[bake_num].manufacturing[strcspn(bak[bake_num].manufacturing, "\n")] = '\0';
+
+
+
+        printf("Enter the expiry date (DD-MM-YYYY): ");
+
+        fgets(bak[bake_num].expiring, sizeof(bak[bake_num].expiring), stdin);
+
+        bak[bake_num].expiring[strcspn(bak[bake_num].expiring, "\n")] = '\0';
+
+
+
+        bake_num++;
+
+
+
+        if (bake_num < MAXB)
+
+        {
+
+            printf("Do you want to continue entering items? (Y/N): ");
+
+            char response;
+
+            scanf(" %c", &response);
+
+
+
+            if (response == 'N' || response == 'n')
+
+            {
+
+                break; // Stop entering items
+
+            }
+
+            else if (response != 'Y' && response != 'y')
+
+            {
+
+                printf("Invalid input. Please enter 'Y' or 'N'.\n");
+
+                break; // Stop entering items
+
+            }
+
+
+
+            // Clear the input buffer to avoid issues with subsequent fgets
+
+            while (getchar() != '\n');
+
+        }
+
+        else
+
+        {
+
+            printf("<======MAXIMUM ITEMS REACHED.======>\n");
+
+            break;
+
+        }
+
+    }
+
+
+
+    for (int i = 0; i < bake_num; i++)
+
+    {
+
+        fprintf(bstore, "\nBakery item name: %s\n", bak[i].item_name);
+
+        fprintf(bstore, "Number of bakery items: %ld\n", bak[i].item_number);
+
+        fprintf(bstore, "Price per item: %lf\n", bak[i].item_price);
+
+        fprintf(bstore, "Manufacture date of item: %s\n", bak[i].manufacturing);
+
+        fprintf(bstore, "Expiry date of item: %s\n", bak[i].expiring);
+
+        fprintf(bstore, "=======================\n");
+
+    }
+
+
+
+    fclose(bstore);
+
+}
+
+//++++++++++++++++++++++++++function to read bakery items from file+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void display_bakery_items()
+
+{
+
+    FILE *bstore = fopen("BAKERY COLLECTION.txt", "r");
+
+    if (bstore == NULL)
+
+    {
+
+        printf("Error opening 'BAKERY COLLECTION.txt' for reading.\n");
+
+        return;
+
+    }
+
+
+
+    printf("Bakery Item Information:\n");
+
+    char buffer[BUFFER_SIZE];
+
+    while (fgets(buffer, sizeof(buffer), bstore) != NULL)
+
+    {
+
+        fputs(buffer, stdout);
+
+    }
+
+
+
+    fclose(bstore);
+
+}
+
+//+++++++++++function to delete bakery items+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void delete_bakery_items()
+
+{
+
+    // Create a temporary file
+
+    FILE *temp = fopen("temp.txt", "w");
+
+    if (temp == NULL)
+
+    {
+
+        printf("<===============ERROR CREATING TEMPORARY FILE===============>\n");
+
+        return;
+
+    }
+
+
+
+    // Open the original file for reading
+
+    FILE *bstore = fopen("BAKERY COLLECTION.txt", "r");
+
+    if (bstore == NULL)
+
+    {
+
+        printf("<===============ERROR OPENING BAKERY COLLECTION FILE===============>\n");
+
+        fclose(temp);
+
+        return;
+
+    }
+
+    char main_item_name[70];
+
+    char item_name_to_delete[70];
+
+    int item_deleted = 0;
+
+    char header[70]; // To read the "Bakery item name" header for comparison
+
+
+
+    printf("Enter the name of the bakery item to delete: ");
+
+    fgets(item_name_to_delete, sizeof(item_name_to_delete), stdin);
+
+    item_name_to_delete[strcspn(item_name_to_delete, "\n")] = '\0';
+
+
+
+    // Read lines from the original file, compare the item name, and write to the temporary file
+
+    while (fgets(header, sizeof(header), bstore) != NULL)
+
+    {
+
+        if (strncmp(header, "Bakery item name: ", 18) == 0)
+
+        {
+
+            strncpy(main_item_name, header + 18, sizeof(main_item_name));// Read the item name and remove the trailing newline character
+
+            main_item_name[strcspn(main_item_name, "\n")] = '\0';
+
+
+
+            if (strcmp(main_item_name, item_name_to_delete) != 0)
+
+            {
+
+                // Write the item to the temporary file if it's not the one to be deleted
+
+                fprintf(temp, "Bakery item name: %s\n", main_item_name);
+
+
+
+                // Read and write the rest of the item details
+
+                char line[256]; // To read each line
+
+                for (int i = 0; i < 4; i++)
+
+                {
+
+                    if (fgets(line, sizeof(line), bstore))
+
+                    {
+
+                        fprintf(temp, "%s", line);
+
+                    }
+
+                }
+
+                fprintf(temp, "=======================\n");
+
+            }
+
+            else
+
+            {
+
+                item_deleted = 1;
+
+            }
+
+        }
+
+    }
+
+    fclose(bstore);
+
+    fclose(temp);
+
+    remove("BAKERY COLLECTION.txt");
+
+    rename("temp.txt", "BAKERY COLLECTION.txt");
+
+    if (item_deleted)
+
+    {
+
+        printf("Bakery item '%s' has been deleted.\n", item_name_to_delete);
+
+    }
+
+    else
+
+    {
+
+        printf("Bakery item '%s' not found in the collection.\n", item_name_to_delete);
+
+    }
+
+}
+
+//structure to store online order information<<<<<<<<<<<<<<<<<<<<
+
+typedef struct
+
+{
+
+    char name[70];
+
+    char phone[20];
+
+    char address[200];
+
+    char date_ordered[30];
+
+    char date_of_delivery[30];
+
+    char item_deson[400];
+
+
+
+
+
+} ONLINE;
+
+ONLINE cus[MAXC];
+
+int customer_num=0;
+
+/*ONLINE ORDER AND DELIVERY PART************************************************************************************************************************************************************************************************************************************/
+
+void input_order()
+
+{
+
+    char item_name_to_order[70];
+
+    long int num_to_order;
+
+    int item_found = 0;
+
+
+
+    // Prompt user for the name of the item and number to order
+
+    printf("Enter the name of the bakery item to order: ");
+
+    fgets(item_name_to_order, sizeof(item_name_to_order), stdin);
+
+    item_name_to_order[strcspn(item_name_to_order, "\n")] = '\0';
+
+
+
+    printf("Enter the number of items to order: ");
+
+    scanf("%ld", &num_to_order);
+
+    fflush(stdin);
+
+
+
+    FILE *bstore = fopen("BAKERY COLLECTION.txt", "r");
+
+    if (bstore == NULL)
+
+    {
+
+        printf("Error opening 'BAKERY COLLECTION.txt' for reading.\n");
+
+        return;
+
+    }
+
+
+
+    FILE *temp = fopen("temp.txt", "w");
+
+    if (temp == NULL)
+
+    {
+
+        printf("Error creating temporary file.\n");
+
+        fclose(bstore);
+
+        return;
+
+    }
+
+
+
+    char main_item_name[70];
+
+    char line[256];  // To read each line
+
+
+
+    // Read lines from the original file, compare the item name, and update the number of items
+
+    while (fgets(line, sizeof(line), bstore) != NULL)
+
+    {
+
+        if (strncmp(line, "Bakery item name: ", 18) == 0)
+
+        {
+
+            strncpy(main_item_name, line + 18, sizeof(main_item_name));
+
+            main_item_name[strcspn(main_item_name, "\n")] = '\0';
+
+
+
+            if (strcmp(main_item_name, item_name_to_order) == 0)
+
+            {
+
+                item_found = 1;
+
+                long int current_num;
+
+                if (fgets(line, sizeof(line), bstore))
+
+                {
+
+                    sscanf(line, "Number of bakery items: %ld", &current_num);
+
+                    current_num -= num_to_order;
+
+
+
+                    fprintf(temp, "Bakery item name: %s\n", main_item_name);
+
+                    fprintf(temp, "Number of bakery items: %ld\n", current_num);
+
+                    for (int i = 0; i < 3; i++)
+
+                    {
+
+                        if (fgets(line, sizeof(line), bstore))
+
+                        {
+
+                            fprintf(temp, "%s", line);
+
+                        }
+
+                    }
+
+                    fprintf(temp, "=======================\n");
+
+                }
+
+            }
+
+            else
+
+            {
+
+                fprintf(temp, "Bakery item name: %s\n", main_item_name);
+
+                for (int i = 0; i < 4; i++)
+
+                {
+
+                    if (fgets(line, sizeof(line), bstore))
+
+                    {
+
+                        fprintf(temp, "%s", line);
+
+                    }
+
+                }
+
+                fprintf(temp, "=======================\n");
+
+            }
+
+        }
+
+    }
+
+
+
+    fclose(bstore);
+
+    fclose(temp);
+
+    remove("BAKERY COLLECTION.txt");
+
+    rename("temp.txt", "BAKERY COLLECTION.txt");
+
+
+
+    if (item_found)
+
+    {
+
+        // Write the ordered item to the DELIVERY INFO.txt file
+
+        FILE *delivery_info = fopen("DELIVERY INFO.txt", "a+");
+
+        if (delivery_info == NULL)
+
+        {
+
+            printf("Error opening 'DELIVERY INFO.txt' for writing.\n");
+
+            return;
+
+        }
+
+
+
+        fprintf(delivery_info, "Ordered Bakery Item:\n");
+
+        fprintf(delivery_info, "Bakery item name: %s\n", item_name_to_order);
+
+        fprintf(delivery_info, "Number of items ordered: %ld\n", num_to_order);
+
+        fprintf(delivery_info, "=======================\n");
+
+
+
+        fclose(delivery_info);
+
+        printf("%ld %s ordered and records updated.\n", num_to_order, item_name_to_order);
+
+    }
+
+    else
+
+    {
+
+        printf("Bakery item '%s' not found in the collection.\n", item_name_to_order);
+
+    }
+
+//store online ends>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    FILE *order_file = fopen("ONLINE ORDER.txt", "a+");
+
+    if (order_file == NULL)
+
+    {
+
+        printf("<===============ERROR OPENING/CREATING ONLINE ORDER FILE===============>\n");
+
+        return;
+
+    }
+
+
+
+    if (customer_num < MAXC)
+
+    {
+
+
+
+        for (int i = customer_num; i < MAXC; i++)
+
+        {
+
+            printf("Enter the name of the customer: ");
+
+            fgets(cus[i].name, sizeof(cus[i].name), stdin);
+
+            cus[i].name[strcspn(cus[i].name, "\n")] = '\0';
+
+
+
+            printf("Enter the phone number of the customer: ");
+
+            fgets(cus[i].phone, sizeof(cus[i].phone), stdin);
+
+            cus[i].phone[strcspn(cus[i].phone, "\n")] = '\0';
+
+
+
+            printf("Enter the address of the customer: ");
+
+            fgets(cus[i].address, sizeof(cus[i].address), stdin);
+
+            cus[i].address[strcspn(cus[i].address, "\n")] = '\0';
+
+
+
+            printf("Enter the date on which it was ordered (DD-MM-YYYY): ");
+
+            fgets(cus[i].date_ordered, sizeof(cus[i].date_ordered), stdin);
+
+            cus[i].date_ordered[strcspn(cus[i].date_ordered, "\n")] = '\0';
+
+
+
+            printf("Enter the date on which it will be delivered (DD-MM-YYYY): ");
+
+            fgets(cus[i].date_of_delivery, sizeof(cus[i].date_of_delivery), stdin);
+
+            cus[i].date_of_delivery[strcspn(cus[i].date_of_delivery, "\n")] = '\0';
+
+
+
+            printf("Enter a short description of the item in 20 words: ");
+
+            fgets(cus[i].item_deson, sizeof(cus[i].item_deson), stdin);
+
+            cus[i].item_deson[strcspn(cus[i].item_deson, "\n")] = '\0';
+
+
+
+            fprintf(order_file, "Name: %s\n", cus[i].name);
+
+            fprintf(order_file, "Phone: %s\n", cus[i].phone);
+
+            fprintf(order_file, "Address: %s\n", cus[i].address);
+
+            fprintf(order_file, "Date Ordered: %s\n", cus[i].date_ordered);
+
+            fprintf(order_file, "Date of Delivery: %s\n", cus[i].date_of_delivery);
+
+            fprintf(order_file, "Description: %s\n", cus[i].item_deson);
+
+            fprintf(order_file, "=======================\n");
+
+
+
+            if (customer_num < MAXC - 1)
+
+            {
+
+                printf("Great!Enter (N/n) to exit. ");
+
+                char response;
+
+                scanf(" %c", &response);
+
+                getchar();
+
+
+
+                if (response == 'N' || response == 'n')
+
+                {
+
+                    break;
+
+                }
+
+                else if (response != 'N' && response != 'n')
+
+                {
+
+                    printf("Invalid input. Please enter 'n' or 'N'.\n");
+
+                    break;
+
+                }
+
+            }
+
+            else
+
+            {
+
+                printf("\n<======MAXIMUM ORDER REACHED.======>\n");
+
+                break;
+
+            }
+
+        }
+
+    }
+
+    customer_num++;
+
+    fclose(order_file);
+
+}
+
+
+
+
+
+//+++++++++++++++++++++++++function to read online order from file++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void display_online_order()
+
+{
+
+    FILE *order_file = fopen("ONLINE ORDER.txt", "r");
+
+    if (order_file == NULL)
+
+    {
+
+        printf("<===============ERROR OPENING ONLINE ORDER FILE===============>\n");
+
+        return;
+
+    }
+
+    char obuffer[400];
+
+
+
+    while (fgets(obuffer, sizeof(obuffer), order_file) != NULL)
+
+    {
+
+        printf("%s", obuffer);  // line by line
+
+    }
+
+    fclose(order_file);
+
+}
+
+//++++++++++++++++++++++++++++++function to delete online order+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void delete_online_order()
+
+{
+
+    // Create a temporary file
+
+    FILE *temp = fopen("temp.txt", "w");
+
+    if (temp == NULL)
+
+    {
+
+        printf("<===============ERROR CREATING TEMPORARY FILE===============>\n");
+
+        return;
+
+    }
+
+
+
+    // Open the original file for reading
+
+    FILE *order_file = fopen("ONLINE ORDER.txt", "r");
+
+    if (order_file == NULL)
+
+    {
+
+        printf("<===============ERROR OPENING ONLINE ORDER FILE===============>\n");
+
+        fclose(temp);
+
+        return;
+
+    }
+
+    char main_cus_name[70];
+
+    char customer_name_to_delete[70];
+
+    int customer_deleted = 0;
+
+    char header[70]; // To read the "Customer Name" header for comparison
+
+
+
+    printf("Enter the name of the customer to delete: ");
+
+    fgets(customer_name_to_delete, sizeof(customer_name_to_delete), stdin);
+
+    customer_name_to_delete[strcspn(customer_name_to_delete, "\n")] = '\0';
+
+
+
+    // Read lines from the original file, compare the customer name, and write to the temporary file
+
+    while (fgets(header, sizeof(header), order_file) != NULL)
+
+    {
+
+        if (strncmp(header, "Customer Name: ", 15) == 0)
+
+        {
+
+            strncpy(main_cus_name, header + 15, sizeof(main_cus_name)); // Read the customer name and remove the trailing newline character
+
+            main_cus_name[strcspn(main_cus_name, "\n")] = '\0';
+
+
+
+            if (strcmp(main_cus_name, customer_name_to_delete) != 0)
+
+            {
+
+                // Write the customer's information to the temporary file if it's not the one to be deleted
+
+                fprintf(temp, "Customer Name: %s\n", main_cus_name);
+
+
+
+                // Read and write the rest of the customer's details
+
+                char line[256]; // To read each line
+
+                for (int i = 0; i < 5; i++)
+
+                {
+
+                    if (fgets(line, sizeof(line), order_file))
+
+                    {
+
+                        fprintf(temp, "%s", line);
+
+                    }
+
+                }
+
+                fprintf(temp, "=======================\n");
+
+            }
+
+            else
+
+            {
+
+                customer_deleted = 1;
+
+            }
+
+        }
+
+    }
+
+
+
+    fclose(order_file);
+
+    fclose(temp);
+
+    remove("ONLINE ORDER.txt");
+
+    rename("temp.txt", "ONLINE ORDER.txt");
+
+
+
+    if (customer_deleted)
+
+    {
+
+        printf("Customer '%s' and their order have been deleted.\n", customer_name_to_delete);
+
+    }
+
+    else
+
+    {
+
+        printf("Customer '%s' not found in the online orders.\n", customer_name_to_delete);
+
+    }
+
+}
+
+
+
+//++++++++++++++++++++++++++++++++++++++++Display delivery info+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void displayDeliveryInfo()
+
+{
+
+    FILE *delivery_info = fopen("DELIVERY INFO.txt", "r");
+
+
+
+    if (delivery_info == NULL)
+
+    {
+
+        printf("Error opening DELIVERY INFO.txt\n");
+
+        return;
+
+    }
+
+
+
+    char line[400];
+
+
+
+    while (fgets(line, sizeof(line), delivery_info) != NULL)
+
+    {
+
+        printf("%s", line);
+
+    }
+
+
+
+    fclose(delivery_info);
+
+}
+
+/*SOLD ITEMS PART*/
+
+//++++++++++++++++++function to input and store sold items+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void sell_bakery_items()
+
+{
+
+    char item_name_to_sell[70];
+
+    long int num_to_sell;
+
+    int item_found = 0;
+
+
+
+    // Prompt user for the name of the item and number to sell
+
+    printf("Enter the name of the bakery item to sell: ");
+
+    fgets(item_name_to_sell, sizeof(item_name_to_sell), stdin);
+
+    item_name_to_sell[strcspn(item_name_to_sell, "\n")] = '\0';
+
+
+
+    printf("Enter the number of items to sell: ");
+
+    scanf("%ld", &num_to_sell);
+
+    fflush(stdin);
+
+
+
+    FILE *bstore = fopen("BAKERY COLLECTION.txt", "r");
+
+    if (bstore == NULL)
+
+    {
+
+        printf("Error opening 'BAKERY COLLECTION.txt' for reading.\n");
+
+        return;
+
+    }
+
+
+
+    FILE *temp = fopen("temp.txt", "w");
+
+    if (temp == NULL)
+
+    {
+
+        printf("Error creating temporary file.\n");
+
+        fclose(bstore);
+
+        return;
+
+    }
+
+
+
+    char main_item_name[70];
+
+    char line[256];  // To read each line
+
+
+
+    // Read lines from the original file, compare the item name, and update the number of items
+
+    while (fgets(line, sizeof(line), bstore) != NULL)
+
+    {
+
+        if (strncmp(line, "Bakery item name: ", 18) == 0)
+
+        {
+
+            strncpy(main_item_name, line + 18, sizeof(main_item_name));
+
+            main_item_name[strcspn(main_item_name, "\n")] = '\0';
+
+
+
+            if (strcmp(main_item_name, item_name_to_sell) == 0)
+
+            {
+
+                item_found = 1;
+
+                long int current_num;
+
+                if (fgets(line, sizeof(line), bstore))
+
+                {
+
+                    sscanf(line, "Number of bakery items: %ld", &current_num);
+
+                    if (current_num >= num_to_sell)
+
+                    {
+
+                        current_num -= num_to_sell;
+
+                    }
+
+                    else
+
+                    {
+
+                        printf("Insufficient items available for sale.\n");
+
+                        fclose(bstore);
+
+                        fclose(temp);
+
+                        remove("temp.txt");
+
+                        return;
+
+                    }
+
+                    fprintf(temp, "Bakery item name: %s\n", main_item_name);
+
+                    fprintf(temp, "Number of bakery items: %ld\n", current_num);
+
+                    for (int i = 0; i < 3; i++)
+
+                    {
+
+                        if (fgets(line, sizeof(line), bstore))
+
+                        {
+
+                            fprintf(temp, "%s", line);
+
+                        }
+
+                    }
+
+                    fprintf(temp, "=======================\n");
+
+                }
+
+            }
+
+            else
+
+            {
+
+                fprintf(temp, "Bakery item name: %s\n", main_item_name);
+
+                for (int i = 0; i < 4; i++)
+
+                {
+
+                    if (fgets(line, sizeof(line), bstore))
+
+                    {
+
+                        fprintf(temp, "%s", line);
+
+                    }
+
+                }
+
+                fprintf(temp, "=======================\n");
+
+            }
+
+        }
+
+    }
+
+
+
+    fclose(bstore);
+
+    fclose(temp);
+
+    remove("BAKERY COLLECTION.txt");
+
+    rename("temp.txt", "BAKERY COLLECTION.txt");
+
+
+
+    if (item_found)
+
+    {
+
+        // Write the sold item to the SALES INFO.txt file
+
+        FILE *sales_info = fopen("SALES INFO.txt", "a+");
+
+        if (sales_info == NULL)
+
+        {
+
+            printf("Error opening 'SALES INFO.txt' for writing.\n");
+
+            return;
+
+        }
+
+
+
+        fprintf(sales_info, "Sold Bakery Item:\n");
+
+        fprintf(sales_info, "Bakery item name: %s\n", item_name_to_sell);
+
+        fprintf(sales_info, "Number of items sold: %ld\n", num_to_sell);
+
+
+
+        // Copy the rest of the item details
+
+        rewind(bstore);
+
+        while (fgets(line, sizeof(line), bstore) != NULL)
+
+        {
+
+            if (strncmp(line, "Bakery item name: ", 18) == 0)
+
+            {
+
+                if (strcmp(main_item_name, item_name_to_sell) == 0)
+
+                {
+
+                    for (int i = 0; i < 4; i++)
+
+                    {
+
+                        if (fgets(line, sizeof(line), bstore))
+
+                        {
+
+                            fprintf(sales_info, "%s", line);
+
+                        }
+
+                    }
+
+                }
+
+                else
+
+                {
+
+                    for (int i = 0; i < 4; i++)
+
+                    {
+
+                        if (fgets(line, sizeof(line), bstore))
+
+                        {
+
+                            // Do nothing, skip these lines
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+
+        fprintf(sales_info, "=======================\n");
+
+        fclose(sales_info);
+
+        printf("%ld %s sold and records updated.\n", num_to_sell, item_name_to_sell);
+
+    }
+
+    else
+
+    {
+
+        printf("Bakery item '%s' not found in the collection.\n", item_name_to_sell);
+
+    }
+
+}
+
+
+
+//+++++++++++++++++++++++++++function to display sold item information++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void displaySalesInfo()
+
+{
+
+    FILE *sales_info = fopen("SALES INFO.txt", "r");
+
+    if (sales_info == NULL)
+
+    {
+
+        printf("<===============ERROR OPENING SALES INFO FILE===============>\n");
+
+        return;
+
+    }
+
+    char sbuffer[BUFFER_SIZE];
+
+    while (fgets(sbuffer, sizeof(sbuffer), sales_info) != NULL)
+
+    {
+
+        printf("%s", sbuffer);
+
+    }
+
+
+
+    fclose(sales_info);
+
+}
+
+int main()
+
+{
+
+    int choice;
+
+
+
+    do
+
+    {
+
+        printf("\n*** Bakery Management System ***\n");
+
+        printf("1. Input bakery items\n");
+
+        printf("2. Display Bakery Items\n");
+
+        printf("3. Delete Bakery Items\n");
+
+        printf("4. Sell Bakery Item\n");
+
+        printf("5. Display sold items\n");
+
+        printf("6. Input Online Order\n");
+
+        printf("7. Display Online Order\n");
+
+        printf("8. Delete Online Order\n");
+
+        printf("9. Display delivery info\n");
+
+        printf("10. Exit\n");
+
+        printf("Enter your choice: ");
+
+        scanf("%d", &choice);
+
+        getchar();
+
+
+
+        switch (choice)
+
+        {
+
+        case 1:
+
+            input_and_store_bakery_items();
+
+            break;
+
+
+
+        case 2:
+
+            display_bakery_items();
+
+            break;
+
+
+
+        case 3:
+
+            delete_bakery_items();
+
+            break;
+
+
+
+        case 4:
+
+            sell_bakery_items();
+
+            break;
+
+
+
+        case 5:
+
+            displaySalesInfo();
+
+            break;
+
+
+
+        case 6:
+
+            input_order();
+
+            break;
+
+
+
+        case 7:
+
+            display_online_order();
+
+            break;
+
+
+
+        case 8:
+
+            delete_online_order();
+
+            break;
+
+        case 9:
+
+            displayDeliveryInfo();
+
+            break;
+
+
+
+        case 10:
+
+            printf("Exiting the program.\n");
+
+            break;
+
+        default:
+
+            printf("Invalid choice. Please enter a valid option.\n");
+
+        }
+
+    }
+
+    while (choice != 10);
+
+
+
+    return 0;
+
+}
